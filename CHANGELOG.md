@@ -6,6 +6,16 @@ The project uses [Semantic Versioning](https://semver.org/) and groups release e
 
 <!-- releases -->
 
+## 0.1.1 - 2026-09-13
+
+### Fixed
+
+- Display selection bubble above page dialogs (`139a606`)
+
+### Documentation
+
+- Add Chrome-compliant store icon (`b19fea3`)
+
 ## 0.1.0 - 2026-09-13
 
 ### Added

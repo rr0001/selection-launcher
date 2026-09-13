@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Selection Launcher",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Search or copy selected text with a fast, configurable, keyboard-first action bubble.",
   "icons": {
     "16": "src/assets/icons/icon-16.png",
@@ -9,7 +9,11 @@
     "48": "src/assets/icons/icon-48.png",
     "128": "src/assets/icons/icon-128.png"
   },
-  "permissions": ["storage", "clipboardWrite", "webNavigation"],
+  "permissions": [
+    "storage",
+    "clipboardWrite",
+    "webNavigation"
+  ],
   "background": {
     "service_worker": "src/background.js"
   },
@@ -32,8 +36,13 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["src/shared.js", "src/content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/shared.js",
+        "src/content.js"
+      ],
       "all_frames": true,
       "run_at": "document_idle"
     }
