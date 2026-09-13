@@ -9,6 +9,7 @@
 - Search URLs must remain restricted to HTTP and HTTPS.
 - Keep `manifest.json` and `package.json` versions synchronized.
 - Keep packaged extension icons in `src/assets/icons/` and store-only media in `docs/store-assets/`.
+- Keep the 128×128 icon artwork inside Chrome's 96×96 safe area with transparent padding; retain the separate 300×300 store asset.
 - Store screenshots must depict real, current extension behavior. Update them when the represented UI changes materially.
 - Use Conventional Commit-style subjects (`feat:`, `fix:`, `docs:`, and similar) because the release script generates `CHANGELOG.md` from them.
 

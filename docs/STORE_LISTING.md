@@ -64,9 +64,9 @@ Productivity
 
 ## Permission explanations
 
-### Read and change data on websites
+### Host permission (`<all_urls>`)
 
-Selection Launcher needs access to normal web pages to detect text that the user selects and to display the action bubble next to that selection. Selected text is processed only to perform the action the user chooses.
+Selection Launcher uses `<all_urls>` to run its content script on ordinary web pages so it can detect text the user deliberately selects and display the action bubble next to that selection. Access across sites is necessary because selecting, copying, and searching text is the extension's single purpose and must work wherever the user chooses, including inside embedded frames. The extension does not collect browsing history, read page content beyond the active selection, use remote code, or transmit data to developer-controlled servers. Selected text remains local unless the user explicitly activates a configured search action, which opens the selected search provider with the transformed text in the URL.
 
 ### Storage
 
@@ -90,19 +90,18 @@ Keep this summary synchronized with the public privacy policy and the actual imp
 
 ## Reviewer test instructions
 
-1. Load any ordinary web page containing selectable text. Browser-owned pages cannot run content scripts.
-2. Select a word or sentence and confirm that the action bubble appears.
-3. Activate Google and confirm a search tab opens for the selection.
-4. Select text again, activate Copy, and confirm the clipboard contains the selection.
-5. Select text and press Ctrl+Shift+. (Command+Shift+. on macOS). Confirm that the bubble opens and its first action receives keyboard focus.
-6. Use the arrow keys to move between actions, Enter or Space to activate one, and Escape to dismiss the bubble.
-7. Select the extension toolbar icon to open Settings. Add a search engine, change a whitespace transformation, save it, and confirm the new action and transformed URL work.
-
-No sign-in, paid account, test credentials, or developer-operated service is required.
+1. Open an ordinary webpage with selectable text; browser-owned pages do not allow content scripts.
+2. Select text and confirm the action bubble appears.
+3. Choose Google and confirm a search opens for the selection.
+4. Select text again, choose Copy, and verify the clipboard.
+5. Select text and press Ctrl+Shift+. (Command+Shift+. on macOS); verify focus, arrow keys, Enter, and Escape.
+6. Open the toolbar icon to test Settings and a custom engine.
+No account or credentials are required.
 
 ## Store assets
 
 - Packaged icons: `src/assets/icons/`
+- 128×128 Chrome Web Store icon: `docs/store-assets/store-icon-128.png`
 - 300×300 store logo: `docs/store-assets/store-icon-300.png`
 - 1280×800 screenshots: `docs/store-assets/screenshots/`
 - 440×280 promotional tile: `docs/store-assets/promo-small-440x280.png`
