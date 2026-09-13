@@ -6,6 +6,12 @@ The project uses [Semantic Versioning](https://semver.org/) and groups release e
 
 <!-- releases -->
 
+## 0.1.3 - 2026-09-13
+
+### Maintenance
+
+- Enforce ordered release packaging and publishing (`7ae2461`)
+
 ## 0.1.2 - 2026-09-13
 
 ### Fixed

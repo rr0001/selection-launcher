@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Selection Launcher",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Search or copy selected text with a fast, configurable, keyboard-first action bubble.",
   "icons": {
     "16": "src/assets/icons/icon-16.png",
