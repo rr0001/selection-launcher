@@ -6,6 +6,12 @@ The project uses [Semantic Versioning](https://semver.org/) and groups release e
 
 <!-- releases -->
 
+## 0.1.2 - 2026-09-13
+
+### Fixed
+
+- Keep selection actions interactive inside dialogs (`bfaecc0`)
+
 ## 0.1.1 - 2026-09-13
 
 ### Fixed
