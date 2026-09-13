@@ -64,6 +64,18 @@
     (document.documentElement || document.body).append(host);
   }
 
+  function interactiveContainer(node) {
+    const element = node instanceof Element ? node : node?.parentElement;
+    return element?.closest('dialog[open], [aria-modal="true"], [role="dialog"]') || null;
+  }
+
+  function mountUi(container) {
+    const target = container?.isConnected
+      ? container
+      : (document.documentElement || document.body);
+    if (host.parentNode !== target) target.append(host);
+  }
+
   function selectionDetails() {
     const active = document.activeElement;
     if (
@@ -74,17 +86,18 @@
     ) {
       const text = active.value.slice(active.selectionStart, active.selectionEnd);
       const rect = active.getBoundingClientRect();
-      return { text, rect };
+      return { text, rect, container: interactiveContainer(active) };
     }
 
     const selection = window.getSelection();
     const text = selection?.toString() || "";
-    if (!text || !selection.rangeCount) return { text: "", rect: null };
-    let rect = selection.getRangeAt(0).getBoundingClientRect();
+    if (!text || !selection.rangeCount) return { text: "", rect: null, container: null };
+    const range = selection.getRangeAt(0);
+    let rect = range.getBoundingClientRect();
     if (!rect.width && !rect.height) {
-      rect = selection.getRangeAt(0).getClientRects()[0] || rect;
+      rect = range.getClientRects()[0] || rect;
     }
-    return { text, rect };
+    return { text, rect, container: interactiveContainer(range.commonAncestorContainer) };
   }
 
   function hide({ suppress = false } = {}) {
@@ -259,6 +272,7 @@
     }
 
     createUi();
+    mountUi(details.container);
     selectedText = details.text;
     render();
     openPanel();
