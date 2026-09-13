@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Selection Launcher settings</title>
+    <link rel="stylesheet" href="options.css">
+  </head>
+  <body>
+    <div class="save-state" id="save-state" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">Selection Launcher</p>
+          <h1>Turn selected text into an action.</h1>
+          <p class="lede">Search or copy without reaching for a context menu.</p>
+        </div>
+      </header>
+
+      <section class="card compact" aria-labelledby="behavior-title">
+        <div>
+          <h2 id="behavior-title">Behavior</h2>
+          <p>The shortcut opens the bubble and focuses its first action.</p>
+        </div>
+        <label class="toggle"><input id="auto-show" type="checkbox"> Show after selecting text</label>
+        <label class="toggle"><input id="copy-button" type="checkbox"> Include the Copy button</label>
+        <button class="secondary" id="shortcut-button" type="button">Change keyboard shortcut</button>
+        <p class="hint" id="shortcut-status">Default: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>.</kbd>. Chrome manages changes at <code>chrome://extensions/shortcuts</code>.</p>
+      </section>
+
+      <section aria-labelledby="engines-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="engines-title">Search engines</h2>
+            <p>Each enabled engine becomes a button in the selection bubble.</p>
+          </div>
+          <button class="primary" id="add-engine" type="button">Add engine</button>
+        </div>
+        <div id="engine-list" class="engine-list"></div>
+      </section>
+
+      <footer class="page-footer">
+        <span id="extension-version"></span>
+        <span aria-hidden="true">·</span>
+        <span class="signature">Created with care. Pass a little peace along.</span>
+      </footer>
+    </main>
+
+    <template id="engine-template">
+      <article class="card engine">
+        <div class="engine-topline">
+          <label class="field grow"><span>Name</span><input data-field="name" maxlength="40" required></label>
+          <label class="toggle enabled"><input data-field="enabled" type="checkbox"> Enabled</label>
+          <button class="icon-button" data-action="up" type="button" title="Move up" aria-label="Move engine up">↑</button>
+          <button class="icon-button" data-action="down" type="button" title="Move down" aria-label="Move engine down">↓</button>
+          <button class="danger" data-action="remove" type="button">Remove</button>
+        </div>
+        <label class="field"><span>Search URL <small>Use {query} where the selected text belongs</small></span><input data-field="url" type="url" required></label>
+        <div class="transform-grid">
+          <div class="transform-toggles">
+            <label class="toggle"><input data-field="trim" type="checkbox"> Trim beginning and end</label>
+            <label class="toggle"><input data-field="openInNewTab" type="checkbox"> Open in a new tab</label>
+          </div>
+          <label class="field"><span>Spaces and line breaks</span>
+            <select data-field="whitespaceMode">
+              <option value="preserve">Preserve</option>
+              <option value="remove">Remove</option>
+              <option value="replace">Replace with…</option>
+            </select>
+          </label>
+          <label class="field replacement"><span>Replacement <small class="inactive-note">Inactive</small></span><input data-field="whitespaceReplacement" maxlength="20"></label>
+        </div>
+        <details>
+          <summary>Regular expression replacements</summary>
+          <p class="hint">Applied in order after trimming and the whitespace rule.</p>
+          <div class="regex-list" data-role="regex-list"></div>
+          <button class="secondary small" data-action="add-regex" type="button">Add regex rule</button>
+        </details>
+        <div class="preview" data-role="preview"></div>
+      </article>
+    </template>
+
+    <template id="regex-template">
+      <div class="regex-row">
+        <label class="toggle check"><input data-regex="enabled" type="checkbox"><span class="sr-only">Enable rule</span></label>
+        <label class="field"><span>Pattern</span><input data-regex="pattern" placeholder="\\s+"></label>
+        <label class="field"><span>Replacement</span><input data-regex="replacement" placeholder="-"></label>
+        <label class="field flags"><span>Flags</span><input data-regex="flags" value="g" maxlength="8"></label>
+        <button class="icon-button" data-action="remove-regex" type="button" aria-label="Remove regex rule">×</button>
+        <p class="regex-error" data-role="regex-error"></p>
+      </div>
+    </template>
+
+    <script src="shared.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>

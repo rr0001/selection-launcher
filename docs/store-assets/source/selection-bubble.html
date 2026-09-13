@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1280, initial-scale=1">
+  <title>Selection Launcher — selection actions</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 1280px; height: 800px; margin: 0; overflow: hidden; }
+    body { display: grid; place-items: center; background: #dfe7e1; color: #20231f; font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .window { width: 1184px; height: 704px; overflow: hidden; border: 1px solid #b8c1ba; border-radius: 18px; background: #fffefa; box-shadow: 0 28px 70px rgba(26,50,40,.2); }
+    .browser-bar { height: 58px; display: flex; align-items: center; gap: 18px; padding: 0 18px; border-bottom: 1px solid #dcded8; background: #f5f6f3; }
+    .dots { display: flex; gap: 7px; }
+    .dots i { width: 11px; height: 11px; border-radius: 50%; background: #bcc2bc; }
+    .address { flex: 1; height: 34px; display: flex; align-items: center; padding: 0 14px; border: 1px solid #d8dcd6; border-radius: 18px; background: white; color: #767b73; font-size: 13px; }
+    .mini-icon { width: 34px; height: 34px; object-fit: contain; }
+    .page { position: relative; height: 646px; padding: 54px 88px; background: linear-gradient(135deg, #fffefa 0 70%, #f2f6f1 100%); }
+    .eyebrow { margin: 0 0 10px; color: #16705a; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    h1 { width: 690px; margin: 0 0 24px; font: 700 52px/1.06 Georgia, serif; letter-spacing: -.035em; }
+    .article { width: 720px; color: #4c5049; font: 19px/1.72 Georgia, serif; }
+    .article p { margin: 0 0 20px; }
+    mark { padding: 2px 3px; border-radius: 2px; background: #cfe0ff; color: #173b79; }
+    .bubble { position: absolute; top: 284px; left: 252px; display: flex; align-items: center; gap: 7px; padding: 8px; border: 1px solid rgba(48,56,50,.24); border-radius: 13px; background: rgba(255,254,251,.97); box-shadow: 0 12px 32px rgba(20,28,23,.24); }
+    .preview { max-width: 184px; overflow: hidden; padding: 0 5px; color: #6b7068; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+    .bubble button { height: 34px; padding: 0 13px; border: 1px solid #d3d6d0; border-radius: 8px; background: #ecede9; color: #20231f; font: 700 13px system-ui, sans-serif; }
+    .bubble .copy { border-color: #2367d1; background: #2367d1; color: white; }
+    .bubble .gear { width: 34px; padding: 0; font-size: 16px; }
+    .focus-ring { outline: 3px solid #4c8dff; outline-offset: 2px; }
+    .shortcut { position: absolute; right: 66px; bottom: 48px; width: 282px; padding: 20px; border-radius: 16px; background: #0b3127; color: #f9f1ce; box-shadow: 0 16px 32px rgba(10,49,39,.18); }
+    .shortcut strong { display: block; margin-bottom: 8px; color: white; font-size: 17px; }
+    kbd { display: inline-grid; min-width: 30px; height: 29px; margin-right: 4px; place-items: center; border: 1px solid rgba(255,255,255,.26); border-bottom-width: 3px; border-radius: 6px; background: rgba(255,255,255,.1); color: white; font: 700 12px system-ui, sans-serif; }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <div class="browser-bar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div class="address">example.org/research-notes</div>
+      <img class="mini-icon" src="../store-icon-300.png" alt="">
+    </div>
+    <main class="page">
+      <p class="eyebrow">Research notes</p>
+      <h1>Small improvements make browsing feel effortless.</h1>
+      <div class="article">
+        <p>The fastest tools stay out of the way until they are needed. Well-designed <mark>keyboard-first actions</mark> turn a repeated task into one fluid motion.</p>
+        <p>Selection Launcher keeps search and copy close to the words you are already reading.</p>
+      </div>
+      <div class="bubble" role="toolbar" aria-label="Actions for selected text">
+        <span class="preview">keyboard-first actions</span>
+        <button class="focus-ring">Google</button>
+        <button class="copy">Copy</button>
+        <button class="gear" aria-label="Settings">⚙</button>
+      </div>
+      <aside class="shortcut">
+        <strong>Open it without the mouse</strong>
+        <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>.</kbd>
+      </aside>
+    </main>
+  </div>
+</body>
+</html>
