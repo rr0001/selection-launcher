@@ -5,7 +5,10 @@ import {
   compareVersions,
   formatVersion,
   nextVersion,
-  parseVersion
+  parseConventionalCommit,
+  parseVersion,
+  renderReleaseNotes,
+  updateChangelog
 } from "../scripts/publish.mjs";
 
 test("parses and formats stable semantic versions", () => {
@@ -25,4 +28,37 @@ test("compares semantic versions numerically", () => {
   assert.equal(compareVersions("1.10.0", "1.9.9"), 1);
   assert.equal(compareVersions("1.0.0", "1.0.0"), 0);
   assert.equal(compareVersions("0.9.0", "1.0.0"), -1);
+});
+
+test("categorizes Conventional Commits and breaking changes", () => {
+  assert.deepEqual(
+    parseConventionalCommit({ hash: "123456789", subject: "feat(options): add engine ordering" }),
+    { category: "Added", text: "**options:** Add engine ordering (`1234567`)" }
+  );
+  assert.equal(
+    parseConventionalCommit({ subject: "fix!: change stored settings format" }).category,
+    "Breaking Changes"
+  );
+  assert.equal(
+    parseConventionalCommit({ subject: "Update project wording" }).category,
+    "Other Changes"
+  );
+});
+
+test("renders categorized release notes in a stable order", () => {
+  const notes = renderReleaseNotes("1.2.0", "2026-09-13", [
+    { hash: "bbbbbbb", subject: "fix: prevent stale context errors" },
+    { hash: "aaaaaaa", subject: "feat: add configurable engines" },
+    { hash: "ccccccc", subject: "docs: add screenshots" }
+  ]);
+  assert.match(notes, /^## 1\.2\.0 - 2026-09-13/);
+  assert.ok(notes.indexOf("### Added") < notes.indexOf("### Fixed"));
+  assert.ok(notes.indexOf("### Fixed") < notes.indexOf("### Documentation"));
+});
+
+test("inserts the newest release at the top of the changelog", () => {
+  const original = "# Changelog\n\n<!-- releases -->\n\n## 1.0.0 - 2026-01-01\n";
+  const updated = updateChangelog(original, "## 1.1.0 - 2026-02-01\n\n### Added\n\n- A feature");
+  assert.ok(updated.indexOf("## 1.1.0") < updated.indexOf("## 1.0.0"));
+  assert.throws(() => updateChangelog(updated, "## 1.1.0 - 2026-02-01"), /already/);
 });

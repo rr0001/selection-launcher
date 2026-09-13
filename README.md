@@ -2,6 +2,8 @@
 
 A keyboard-first Chrome extension for acting on selected text. Select text on a page, then search with a configurable engine or copy it without opening the context menu.
 
+See [CHANGELOG.md](CHANGELOG.md) for features and fixes included in each release.
+
 ## Screenshots
 
 ### Selection actions
@@ -66,6 +68,7 @@ Selection Launcher is available under the [MIT License](LICENSE). You may use, c
 
 - `manifest.json` — Manifest V3 entry point and default command.
 - `LICENSE` — MIT terms for using and redistributing the project.
+- `CHANGELOG.md` — categorized features and updates for every release.
 - `AGENTS.md` — persistent project instructions for coding agents.
 - `docs/DEVELOPERS.md` — development prerequisites and test instructions.
 - `docs/STORE_LISTING.md` — reusable Chrome and Edge store copy.

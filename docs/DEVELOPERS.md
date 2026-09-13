@@ -70,7 +70,7 @@ npm run release -- minor
 npm run release -- major
 ```
 
-The script synchronizes `manifest.json` and `package.json`, runs the complete build, commits the version as `chore(release): v<version>`, creates an annotated tag, atomically pushes the branch and tag to `origin`, and creates a GitHub release with generated notes and the extension ZIP attached.
+The script reads commits since the previous version tag, updates `CHANGELOG.md`, synchronizes `manifest.json` and `package.json`, runs the complete build, commits the release as `chore(release): v<version>`, creates an annotated tag, atomically pushes the branch and tag to `origin`, and creates a GitHub release with the categorized notes and extension ZIP attached.
 
 For the first `0.1.0` release, after committing the project at version `0.1.0`, publish the current version without an extra version commit:
 
@@ -79,6 +79,20 @@ npm run release -- current
 ```
 
 An explicit higher version such as `npm run release -- 1.4.0` is also accepted. Chromium extension versions do not support semantic-version prerelease suffixes, so use stable `x.y.z` versions only.
+
+### Commit messages and changelog categories
+
+Use concise Conventional Commit-style subjects so the generated changelog is useful:
+
+```text
+feat: add a search-engine shortcut
+fix(options): keep replacement controls aligned
+docs: add installation screenshots
+refactor: simplify selection handling
+feat!: change the stored settings format
+```
+
+The release script groups `feat` as **Added**, `fix` as **Fixed**, `security` as **Security**, `perf` and `refactor` as **Changed**, `docs` as **Documentation**, and build/test/CI/chore commits as **Maintenance**. A `!` before the colon or a `BREAKING CHANGE:` footer places the entry under **Breaking Changes**. Subjects that do not follow the convention remain visible under **Other Changes**.
 
 ## Manual browser testing
 

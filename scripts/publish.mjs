@@ -4,8 +4,38 @@ import { pathToFileURL, fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const changelogPath = join(projectRoot, "CHANGELOG.md");
 const manifestPath = join(projectRoot, "manifest.json");
 const packagePath = join(projectRoot, "package.json");
+
+const CHANGELOG_MARKER = "<!-- releases -->";
+const CATEGORY_ORDER = [
+  "Breaking Changes",
+  "Added",
+  "Fixed",
+  "Security",
+  "Changed",
+  "Removed",
+  "Deprecated",
+  "Documentation",
+  "Maintenance",
+  "Other Changes"
+];
+
+const TYPE_CATEGORIES = Object.freeze({
+  feat: "Added",
+  fix: "Fixed",
+  security: "Security",
+  perf: "Changed",
+  refactor: "Changed",
+  remove: "Removed",
+  deprecate: "Deprecated",
+  docs: "Documentation",
+  build: "Maintenance",
+  chore: "Maintenance",
+  ci: "Maintenance",
+  test: "Maintenance"
+});
 
 export function parseVersion(value) {
   const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(value);
@@ -36,10 +66,56 @@ export function nextVersion(current, releaseType) {
   throw new Error(`Unknown release type "${releaseType}". Use major, minor, or patch.`);
 }
 
+export function parseConventionalCommit({ hash = "", subject = "", body = "" }) {
+  const match = /^([a-z]+)(?:\(([^)]+)\))?(!)?:\s+(.+)$/i.exec(subject.trim());
+  const type = match?.[1]?.toLowerCase();
+  const scope = match?.[2];
+  const breaking = Boolean(match?.[3]) || /^BREAKING[ -]CHANGE:\s*.+$/im.test(body);
+  const description = (match?.[4] || subject.trim() || "Unspecified change").replace(/\s+/g, " ");
+  const readableDescription = description.charAt(0).toUpperCase() + description.slice(1);
+  const shortHash = hash.slice(0, 7);
+
+  return {
+    category: breaking ? "Breaking Changes" : (TYPE_CATEGORIES[type] || "Other Changes"),
+    text: `${scope ? `**${scope}:** ` : ""}${readableDescription}${shortHash ? ` (\`${shortHash}\`)` : ""}`
+  };
+}
+
+export function renderReleaseNotes(version, date, commits) {
+  const categorized = new Map(CATEGORY_ORDER.map((category) => [category, []]));
+  for (const commit of commits) {
+    const entry = parseConventionalCommit(commit);
+    categorized.get(entry.category).push(entry.text);
+  }
+
+  const sections = CATEGORY_ORDER
+    .filter((category) => categorized.get(category).length)
+    .map((category) => [
+      `### ${category}`,
+      "",
+      ...categorized.get(category).map((entry) => `- ${entry}`)
+    ].join("\n"));
+
+  if (!sections.length) throw new Error("No releasable commits were found.");
+  return [`## ${version} - ${date}`, ...sections].join("\n\n");
+}
+
+export function updateChangelog(content, releaseNotes) {
+  if (!content.includes(CHANGELOG_MARKER)) {
+    throw new Error(`CHANGELOG.md must contain ${CHANGELOG_MARKER}.`);
+  }
+  const heading = releaseNotes.split("\n", 1)[0];
+  if (content.includes(heading)) {
+    throw new Error(`${heading.replace(/^## /, "Version ")} is already in CHANGELOG.md.`);
+  }
+  return content.replace(CHANGELOG_MARKER, `${CHANGELOG_MARKER}\n\n${releaseNotes.trim()}`);
+}
+
 function run(command, args, { capture = false, allowFailure = false } = {}) {
   const result = spawnSync(command, args, {
     cwd: projectRoot,
     encoding: "utf8",
+    maxBuffer: 10 * 1024 * 1024,
     shell: false,
     stdio: capture ? "pipe" : "inherit"
   });
@@ -59,6 +135,42 @@ function run(command, args, { capture = false, allowFailure = false } = {}) {
     stdout: capture ? (result.stdout || "").trim() : "",
     stderr: capture ? (result.stderr || "").trim() : ""
   };
+}
+
+function readReleaseCommits() {
+  const previousTagResult = run(
+    "git",
+    ["describe", "--tags", "--abbrev=0", "--match", "v[0-9]*"],
+    { capture: true, allowFailure: true }
+  );
+  const previousTag = previousTagResult.status === 0 ? previousTagResult.stdout : "";
+  const range = previousTag ? `${previousTag}..HEAD` : "HEAD";
+  const output = run(
+    "git",
+    ["log", range, "--no-merges", "--format=%H%x1f%s%x1f%b%x1e"],
+    { capture: true }
+  ).stdout;
+  const commits = output
+    .split("\x1e")
+    .map((record) => record.trim())
+    .filter(Boolean)
+    .map((record) => {
+      const [hash, subject, ...bodyParts] = record.split("\x1f");
+      return { hash, subject, body: bodyParts.join("\x1f") };
+    })
+    .filter((commit) => !/^chore\(release\):\s+v\d+\.\d+\.\d+$/i.test(commit.subject));
+
+  if (!commits.length) {
+    throw new Error(`No releasable commits were found${previousTag ? ` after ${previousTag}` : ""}.`);
+  }
+  return { commits, previousTag };
+}
+
+function localDate() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
 }
 
 function runNpmBuild() {
@@ -107,8 +219,8 @@ Examples:
   npm run release -- minor --dry-run
   npm run release -- current
 
-"current" tags and publishes the version already in the manifest without creating
-a version commit. It is intended for the first release after the initial commit.`);
+"current" publishes the version already in the manifest. It is intended for the
+first release after the initial commit. Every release updates CHANGELOG.md.`);
 }
 
 async function main() {
@@ -147,6 +259,9 @@ async function main() {
   const tag = `v${targetVersion}`;
   const changesVersion = targetVersion !== currentVersion;
   const archivePath = join(projectRoot, "dist", `selection-launcher-v${targetVersion}.zip`);
+  const releaseNotesPath = join(projectRoot, "dist", `release-notes-v${targetVersion}.md`);
+  const { commits, previousTag } = readReleaseCommits();
+  const releaseNotes = renderReleaseNotes(targetVersion, localDate(), commits);
 
   const localTag = run("git", ["rev-parse", "--verify", "--quiet", `refs/tags/${tag}`], {
     capture: true,
@@ -159,7 +274,10 @@ async function main() {
   Version: ${currentVersion} -> ${targetVersion}${changesVersion ? "" : " (unchanged)"}
   Tag:     ${tag}
   Remote:  origin
-  Asset:   ${archivePath}`);
+  Since:   ${previousTag || "first commit"}
+  Asset:   ${archivePath}
+
+${releaseNotes}`);
 
   if (dryRun) {
     console.log("\nDry run complete. No files, commits, tags, pushes, or releases were changed.");
@@ -179,6 +297,7 @@ async function main() {
 
   const originalManifest = readFileSync(manifestPath, "utf8");
   const originalPackage = readFileSync(packagePath, "utf8");
+  const originalChangelog = readFileSync(changelogPath, "utf8");
   let committed = false;
 
   try {
@@ -189,19 +308,26 @@ async function main() {
       writeMetadata(packagePath, packageMetadata);
     }
 
-    runNpmBuild();
+    writeFileSync(changelogPath, updateChangelog(originalChangelog, releaseNotes));
 
-    if (changesVersion) {
-      run("git", ["add", "--", "manifest.json", "package.json"]);
-      run("git", ["diff", "--cached", "--check"]);
-      run("git", ["commit", "-m", `chore(release): ${tag}`]);
-      committed = true;
-    }
+    runNpmBuild();
+    writeFileSync(releaseNotesPath, `${releaseNotes}\n`);
+
+    const releaseFiles = changesVersion
+      ? ["CHANGELOG.md", "manifest.json", "package.json"]
+      : ["CHANGELOG.md"];
+    run("git", ["add", "--", ...releaseFiles]);
+    run("git", ["diff", "--cached", "--check"]);
+    run("git", ["commit", "-m", `chore(release): ${tag}`]);
+    committed = true;
   } catch (error) {
-    if (changesVersion && !committed) {
-      writeFileSync(manifestPath, originalManifest);
-      writeFileSync(packagePath, originalPackage);
-      run("git", ["restore", "--staged", "--", "manifest.json", "package.json"], {
+    if (!committed) {
+      writeFileSync(changelogPath, originalChangelog);
+      if (changesVersion) {
+        writeFileSync(manifestPath, originalManifest);
+        writeFileSync(packagePath, originalPackage);
+      }
+      run("git", ["restore", "--staged", "--", "CHANGELOG.md", "manifest.json", "package.json"], {
         allowFailure: true
       });
     }
@@ -226,12 +352,13 @@ async function main() {
       "--verify-tag",
       "--title",
       `Selection Launcher ${tag}`,
-      "--generate-notes"
+      "--notes-file",
+      releaseNotesPath
     ]);
   } catch (error) {
     throw new Error(
       `${error.message}\nThe commit and tag were pushed successfully. Retry only the GitHub release with:\n` +
-      `gh release create ${tag} "${archivePath}" --verify-tag --title "Selection Launcher ${tag}" --generate-notes`
+      `gh release create ${tag} "${archivePath}" --verify-tag --title "Selection Launcher ${tag}" --notes-file "${releaseNotesPath}"`
     );
   }
 
