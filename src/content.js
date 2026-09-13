@@ -14,12 +14,14 @@
   let selectedText = "";
   let autoShowTimer = null;
   let suppressUntil = 0;
+  let useTopLayerPopover = typeof HTMLElement.prototype.showPopover === "function";
 
   const styles = `
     :host { all: initial; color-scheme: light dark; }
     .panel {
-      position: fixed; z-index: 2147483647; display: flex; align-items: center;
+      position: fixed; inset: auto; z-index: 2147483647; display: flex; align-items: center;
       gap: 6px; max-width: min(560px, calc(100vw - 16px)); padding: 7px;
+      margin: 0;
       border: 1px solid rgba(127,127,127,.35); border-radius: 12px;
       background: color-mix(in srgb, Canvas 94%, transparent);
       color: CanvasText; box-shadow: 0 8px 28px rgba(0,0,0,.22);
@@ -27,6 +29,7 @@
       backdrop-filter: blur(12px); opacity: 0; transform: translateY(3px) scale(.98);
       transition: opacity 90ms ease, transform 90ms ease;
     }
+    .panel::backdrop { background: transparent; pointer-events: none; }
     .panel.visible { opacity: 1; transform: none; }
     .preview { max-width: 160px; overflow: hidden; text-overflow: ellipsis;
       white-space: nowrap; padding: 0 4px; opacity: .72; }
@@ -55,6 +58,7 @@
     panel.className = "panel";
     panel.setAttribute("role", "toolbar");
     panel.setAttribute("aria-label", "Actions for selected text");
+    if (useTopLayerPopover) panel.setAttribute("popover", "manual");
     panel.hidden = true;
     shadow.append(style, panel);
     (document.documentElement || document.body).append(host);
@@ -86,9 +90,25 @@
   function hide({ suppress = false } = {}) {
     if (!panel || panel.hidden) return;
     panel.classList.remove("visible");
+    if (useTopLayerPopover && panel.matches(":popover-open")) {
+      panel.hidePopover();
+    }
     panel.hidden = true;
     selectedText = "";
     if (suppress) suppressUntil = Date.now() + 350;
+  }
+
+  function openPanel() {
+    panel.hidden = false;
+    if (!useTopLayerPopover) return;
+
+    try {
+      if (!panel.matches(":popover-open")) panel.showPopover();
+    } catch (_error) {
+      // Fall back to the fixed, maximum-z-index panel in older or unusual pages.
+      useTopLayerPopover = false;
+      panel.removeAttribute("popover");
+    }
   }
 
   function placePanel(rect) {
@@ -241,7 +261,7 @@
     createUi();
     selectedText = details.text;
     render();
-    panel.hidden = false;
+    openPanel();
     placePanel(details.rect);
     requestAnimationFrame(() => panel.classList.add("visible"));
     if (focus) requestAnimationFrame(() => actionButtons()[0]?.focus());
