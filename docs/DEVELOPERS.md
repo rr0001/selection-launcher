@@ -42,7 +42,7 @@ npm run check
 npm test
 ```
 
-## Build a release package
+## Build a package locally (without publishing)
 
 Create a store-ready ZIP from `manifest.json`, `LICENSE`, and `src/`:
 
@@ -50,13 +50,17 @@ Create a store-ready ZIP from `manifest.json`, `LICENSE`, and `src/`:
 npm run build
 ```
 
-The build runs the syntax checks and automated tests first. If they pass, it creates `dist/selection-launcher-v<version>.zip`. Build output is ignored by Git. The ZIP contains `manifest.json` and `LICENSE` at its root, and excludes tests, project documentation, and developer tooling.
+The build runs the syntax checks and automated tests first. If they pass, it recreates `dist/selection-launcher-v<version>.zip`. Build output is ignored by Git. The ZIP contains `manifest.json` and `LICENSE` at its root, and excludes tests, project documentation, and developer tooling.
+
+This command is useful for local testing. It does not bump the version, update the changelog, commit, tag, push, or publish anything. The release command always performs its own clean build, so a manually built ZIP is never reused for a GitHub release.
 
 ## Publish a GitHub release
 
 Before the first release, install GitHub CLI, run `gh auth login`, configure an `origin` remote, and commit the project. The release command intentionally refuses to run with uncommitted or untracked files.
 
-Preview a release without changing anything:
+Publishing is a single-command workflow. Do not run `npm run build` afterward; the release command creates and uploads the authoritative package itself.
+
+Preview the version and generated changelog without changing or building anything:
 
 ```shell
 npm run release -- patch --dry-run
@@ -70,9 +74,20 @@ npm run release -- minor
 npm run release -- major
 ```
 
-The script reads commits since the previous version tag, updates `CHANGELOG.md`, synchronizes `manifest.json` and `package.json`, runs the complete build, commits the release as `chore(release): v<version>`, creates an annotated tag, atomically pushes the branch and tag to `origin`, and creates a GitHub release with the categorized notes and extension ZIP attached.
+The release command performs these operations in order:
 
-For the first `0.1.0` release, after committing the project at version `0.1.0`, publish the current version without an extra version commit:
+1. Read commits since the previous tag and generate the changelog entry.
+2. Bump and synchronize `manifest.json` and `package.json`.
+3. Run syntax checks and automated tests.
+4. Delete the old `dist/` output and build a fresh versioned ZIP.
+5. Verify the ZIP exists, is fresh and nonempty, then generate its SHA-256 checksum.
+6. Commit `CHANGELOG.md` and the version files, then create an annotated version tag.
+7. Atomically push the commit and tag to `origin`.
+8. Create the GitHub release with the freshly built ZIP, checksum, and categorized release notes.
+
+After it succeeds, upload the existing `dist/selection-launcher-v<version>.zip` to the browser stores. Do not rebuild between the GitHub release and store upload.
+
+For a first release, after committing the project at its intended version, publish that current version:
 
 ```shell
 npm run release -- current

@@ -8,6 +8,7 @@ import {
   parseConventionalCommit,
   parseVersion,
   renderReleaseNotes,
+  sha256,
   updateChangelog
 } from "../scripts/publish.mjs";
 
@@ -61,4 +62,11 @@ test("inserts the newest release at the top of the changelog", () => {
   const updated = updateChangelog(original, "## 1.1.0 - 2026-02-01\n\n### Added\n\n- A feature");
   assert.ok(updated.indexOf("## 1.1.0") < updated.indexOf("## 1.0.0"));
   assert.throws(() => updateChangelog(updated, "## 1.1.0 - 2026-02-01"), /already/);
+});
+
+test("calculates a reproducible SHA-256 digest", () => {
+  assert.equal(
+    sha256("abc"),
+    "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+  );
 });

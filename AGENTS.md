@@ -16,8 +16,10 @@
 ## Validation
 
 - After changing JavaScript, run `npm run check` and `npm test`.
-- Before a release, run `npm run build`.
-- Use `npm run release -- <major|minor|patch>` for public GitHub releases; use its dry-run mode first.
+- `npm run build` is for local packages and testing only; it does not publish.
+- Use `npm run release -- <major|minor|patch>` as the single public-release command; use its dry-run mode first.
+- The release command must generate the changelog, bump versions, perform a clean build, verify the package, commit, tag, push, and publish in that order.
+- After a successful release, upload its existing ZIP to browser stores without rebuilding it.
 - Do not edit generated release sections in `CHANGELOG.md` during publishing; improve the source commit messages before release instead.
 - The release ZIP must contain `manifest.json` at its root.
 - Keep `LICENSE` in every release ZIP so the attribution and permission notice travels with distributed copies.

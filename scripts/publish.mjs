@@ -1,5 +1,6 @@
-import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
@@ -111,6 +112,10 @@ export function updateChangelog(content, releaseNotes) {
   return content.replace(CHANGELOG_MARKER, `${CHANGELOG_MARKER}\n\n${releaseNotes.trim()}`);
 }
 
+export function sha256(contents) {
+  return createHash("sha256").update(contents).digest("hex");
+}
+
 function run(command, args, { capture = false, allowFailure = false } = {}) {
   const result = spawnSync(command, args, {
     cwd: projectRoot,
@@ -180,6 +185,25 @@ function runNpmBuild() {
     return;
   }
   run(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "build"]);
+}
+
+function verifyFreshArchive(archivePath, targetVersion, buildStartedAt) {
+  if (!existsSync(archivePath)) {
+    throw new Error(`The build did not create the expected ${basename(archivePath)}.`);
+  }
+
+  const archive = statSync(archivePath);
+  if (!archive.isFile() || archive.size === 0) {
+    throw new Error(`The release archive for ${targetVersion} is empty or invalid.`);
+  }
+  if (archive.mtimeMs < buildStartedAt - 2000) {
+    throw new Error(`The release archive for ${targetVersion} was not freshly built.`);
+  }
+
+  const digest = sha256(readFileSync(archivePath));
+  const checksumPath = join(dirname(archivePath), `${basename(archivePath)}.sha256`);
+  writeFileSync(checksumPath, `${digest}  ${basename(archivePath)}\n`);
+  return { checksumPath, digest, size: archive.size };
 }
 
 function readMetadata() {
@@ -299,8 +323,10 @@ ${releaseNotes}`);
   const originalPackage = readFileSync(packagePath, "utf8");
   const originalChangelog = readFileSync(changelogPath, "utf8");
   let committed = false;
+  let checksumPath = "";
 
   try {
+    console.log("\n[1/7] Generating changelog and updating version metadata...");
     if (changesVersion) {
       manifest.version = targetVersion;
       packageMetadata.version = targetVersion;
@@ -310,9 +336,18 @@ ${releaseNotes}`);
 
     writeFileSync(changelogPath, updateChangelog(originalChangelog, releaseNotes));
 
+    console.log("[2/7] Running checks and tests, then building a clean package...");
+    const buildStartedAt = Date.now();
     runNpmBuild();
-    writeFileSync(releaseNotesPath, `${releaseNotes}\n`);
 
+    console.log("[3/7] Verifying the freshly built release asset...");
+    const verifiedArchive = verifyFreshArchive(archivePath, targetVersion, buildStartedAt);
+    checksumPath = verifiedArchive.checksumPath;
+    writeFileSync(releaseNotesPath, `${releaseNotes}\n`);
+    console.log(`Verified ${basename(archivePath)} (${verifiedArchive.size} bytes)`);
+    console.log(`SHA-256: ${verifiedArchive.digest}`);
+
+    console.log("[4/7] Creating the release commit...");
     const releaseFiles = changesVersion
       ? ["CHANGELOG.md", "manifest.json", "package.json"]
       : ["CHANGELOG.md"];
@@ -334,7 +369,9 @@ ${releaseNotes}`);
     throw error;
   }
 
+  console.log("[5/7] Creating the annotated version tag...");
   run("git", ["tag", "-a", tag, "-m", `Selection Launcher ${tag}`]);
+  console.log("[6/7] Atomically pushing the release commit and tag...");
   run("git", [
     "push",
     "--atomic",
@@ -344,11 +381,13 @@ ${releaseNotes}`);
   ]);
 
   try {
+    console.log("[7/7] Publishing the GitHub release with the verified package...");
     run("gh", [
       "release",
       "create",
       tag,
       archivePath,
+      checksumPath,
       "--verify-tag",
       "--title",
       `Selection Launcher ${tag}`,
@@ -358,7 +397,7 @@ ${releaseNotes}`);
   } catch (error) {
     throw new Error(
       `${error.message}\nThe commit and tag were pushed successfully. Retry only the GitHub release with:\n` +
-      `gh release create ${tag} "${archivePath}" --verify-tag --title "Selection Launcher ${tag}" --notes-file "${releaseNotesPath}"`
+      `gh release create ${tag} "${archivePath}" "${checksumPath}" --verify-tag --title "Selection Launcher ${tag}" --notes-file "${releaseNotesPath}"`
     );
   }
 

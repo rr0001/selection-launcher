@@ -125,5 +125,5 @@ rmSync(outputPath, { recursive: true, force: true });
 mkdirSync(outputPath, { recursive: true });
 writeFileSync(archivePath, makeZip(files));
 
-console.log(`Built ${relative(projectRoot, archivePath)}`);
+console.log(`Cleaned dist and built ${relative(projectRoot, archivePath)}`);
 console.log(`Packaged ${files.length} files with manifest.json at the archive root.`);
