@@ -6,6 +6,12 @@ The project uses [Semantic Versioning](https://semver.org/) and groups release e
 
 <!-- releases -->
 
+## 0.1.4 - 2026-09-13
+
+### Fixed
+
+- Avoid overlapping page selection controls (`43bf10c`)
+
 ## 0.1.3 - 2026-09-13
 
 ### Maintenance
