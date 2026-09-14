@@ -13,6 +13,7 @@
   let panel = null;
   let selectedText = "";
   let autoShowTimer = null;
+  let repositionTimer = null;
   let suppressUntil = 0;
   let useTopLayerPopover = typeof HTMLElement.prototype.showPopover === "function";
 
@@ -101,6 +102,8 @@
   }
 
   function hide({ suppress = false } = {}) {
+    clearTimeout(repositionTimer);
+    repositionTimer = null;
     if (!panel || panel.hidden) return;
     panel.classList.remove("visible");
     if (useTopLayerPopover && panel.matches(":popover-open")) {
@@ -124,7 +127,45 @@
     }
   }
 
-  function placePanel(rect) {
+  function floatingObstructions(candidate, selectionContainer) {
+    const inset = Math.min(12, candidate.width / 4, candidate.height / 4);
+    const xPoints = [candidate.left + inset, candidate.left + candidate.width / 2, candidate.right - inset];
+    const yPoints = [candidate.top + inset, candidate.top + candidate.height / 2, candidate.bottom - inset];
+    const obstructions = new Set();
+
+    for (const x of xPoints) {
+      for (const y of yPoints) {
+        if (x < 0 || y < 0 || x >= window.innerWidth || y >= window.innerHeight) continue;
+
+        for (const element of document.elementsFromPoint(x, y)) {
+          if (element === host || host?.contains(element)) continue;
+
+          for (let current = element; current && current !== document.documentElement; current = current.parentElement) {
+            if (current === selectionContainer) break;
+            const style = getComputedStyle(current);
+            const isFloating = style.position === "fixed" ||
+              (["absolute", "sticky"].includes(style.position) && style.zIndex !== "auto");
+            if (!isFloating) continue;
+
+            const bounds = current.getBoundingClientRect();
+            const isVisible = style.display !== "none" && style.visibility !== "hidden" &&
+              style.pointerEvents !== "none" && bounds.width > 0 && bounds.height > 0;
+            const isCompact = bounds.width * bounds.height < window.innerWidth * window.innerHeight * 0.6;
+            if (isVisible && isCompact) obstructions.add(current);
+            break;
+          }
+        }
+      }
+    }
+
+    return [...obstructions].map((element) => element.getBoundingClientRect());
+  }
+
+  function placementCandidate(left, top, width, height) {
+    return { left, top, width, height, right: left + width, bottom: top + height };
+  }
+
+  function placePanel(rect, selectionContainer) {
     panel.style.left = "8px";
     panel.style.top = "8px";
     const own = panel.getBoundingClientRect();
@@ -136,10 +177,34 @@
       window.innerWidth - own.width - 8,
       Math.max(8, anchorLeft + ((rect?.width || 0) - own.width) / 2)
     );
-    let top = anchorBottom + gap;
-    if (top + own.height > window.innerHeight - 8) top = anchorTop - own.height - gap;
+    const below = placementCandidate(left, anchorBottom + gap, own.width, own.height);
+    const above = placementCandidate(left, anchorTop - own.height - gap, own.width, own.height);
+    let chosen = below;
+
+    if (rect) {
+      const belowObstructions = floatingObstructions(below, selectionContainer);
+      const aboveFits = above.top >= 8;
+      if (below.bottom > window.innerHeight - 8 || belowObstructions.length) {
+        const aboveIsClear = aboveFits && !floatingObstructions(above, selectionContainer).length;
+        if (aboveIsClear) {
+          chosen = above;
+        } else if (belowObstructions.length) {
+          const stackedTop = Math.max(...belowObstructions.map((item) => item.bottom)) + gap;
+          const stacked = placementCandidate(left, stackedTop, own.width, own.height);
+          if (stacked.bottom <= window.innerHeight - 8 &&
+              !floatingObstructions(stacked, selectionContainer).length) {
+            chosen = stacked;
+          } else if (aboveFits) {
+            chosen = above;
+          }
+        } else if (aboveFits) {
+          chosen = above;
+        }
+      }
+    }
+
     panel.style.left = `${Math.max(8, left)}px`;
-    panel.style.top = `${Math.max(8, top)}px`;
+    panel.style.top = `${Math.max(8, Math.min(chosen.top, window.innerHeight - own.height - 8))}px`;
   }
 
   function setStatus(message) {
@@ -276,7 +341,13 @@
     selectedText = details.text;
     render();
     openPanel();
-    placePanel(details.rect);
+    placePanel(details.rect, details.container);
+    clearTimeout(repositionTimer);
+    repositionTimer = window.setTimeout(() => {
+      if (panel && !panel.hidden && selectedText === details.text) {
+        placePanel(details.rect, details.container);
+      }
+    }, 180);
     requestAnimationFrame(() => panel.classList.add("visible"));
     if (focus) requestAnimationFrame(() => actionButtons()[0]?.focus());
     return true;

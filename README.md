@@ -51,6 +51,7 @@ Transforms are configured per engine and run in this order:
 
 Settings sync through the browser's extension storage when browser sync is available.
 The settings page saves changes automatically, confirms them with a brief notification, and clearly disables the whitespace replacement field until that transformation is selected.
+When a page displays its own floating selection controls, the action bubble checks for a collision and moves above the selection or beyond the page's controls when space permits.
 
 ## Development
 
