@@ -32,6 +32,12 @@
         "mac": "Command+Shift+Period"
       },
       "description": "Open actions for the selected text"
+    },
+    "search-first-engine": {
+      "suggested_key": {
+        "default": "Alt+1"
+      },
+      "description": "Search selected text with the first enabled engine"
     }
   },
   "content_scripts": [

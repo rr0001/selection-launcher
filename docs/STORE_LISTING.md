@@ -14,7 +14,7 @@ Search or copy selected text with a fast, configurable, keyboard-first action bu
 
 Selection Launcher turns highlighted text into an immediate action. Select text on almost any web page and use the compact action bubble to search with your preferred engine or copy the selection to your clipboard—without opening the browser's context menu.
 
-The extension is designed for people who prefer keyboard navigation, want a faster research workflow, or find repeated mouse and context-menu use inconvenient. Press Ctrl+Shift+. on Windows, Linux, or ChromeOS—or Command+Shift+. on macOS—to open the actions for the current selection and focus the first button. The shortcut can be reassigned from the browser's extension shortcut settings.
+The extension is designed for people who prefer keyboard navigation, want a faster research workflow, or find repeated mouse and context-menu use inconvenient. Press Ctrl+Shift+. on Windows, Linux, or ChromeOS—or Command+Shift+. on macOS—to open the actions for the current selection and focus the first button. Press Alt+1 to search immediately with the first enabled engine without opening the bubble. Shortcuts can be reassigned from the browser's extension shortcut settings.
 
 Each configured search engine appears as its own action. Search engines can use custom URL templates and transform selected text before opening a result. Available transformations include trimming surrounding whitespace, preserving or removing spaces, replacing whitespace with a chosen character, and applying ordered regular-expression replacements.
 
@@ -25,7 +25,9 @@ Selection Launcher includes:
 - Configurable search engines and URL templates.
 - Per-engine whitespace and regular-expression transformations.
 - Arrow-key navigation between actions, plus Home, End, Enter, Space, and Escape support.
+- A direct keyboard shortcut for the first enabled search engine.
 - An option to show the bubble automatically after text is selected.
+- Automatic suppression in editable fields until a shortcut is used.
 - Browser-synchronized settings when extension sync is available.
 
 Selection Launcher does not operate on browser-protected pages such as extension stores or internal `chrome://` and `edge://` pages.
@@ -34,7 +36,7 @@ Selection Launcher does not operate on browser-protected pages such as extension
 
 1. Select text on a normal web page.
 2. Choose a search engine or Copy from the action bubble.
-3. For a keyboard-only workflow, press Ctrl+Shift+. (Command+Shift+. on macOS), move between actions with the arrow keys, and press Enter or Space.
+3. For a keyboard-only workflow, press Ctrl+Shift+. (Command+Shift+. on macOS), move between actions with the arrow keys, and press Enter or Space. Alternatively, press Alt+1 to search with the first enabled engine immediately.
 4. Select the extension's toolbar icon to configure search engines, transformations, automatic display, and tab behavior.
 5. Change the extension shortcut from the browser's extension shortcut settings whenever desired.
 
@@ -78,7 +80,7 @@ Writes the currently selected text to the clipboard only when the user activates
 
 ### Web navigation
 
-Finds the frames in the active tab so the browser-managed keyboard shortcut can reach selected text inside an embedded frame.
+Finds the frames in the active tab so browser-managed keyboard shortcuts can reach selected text inside an embedded frame.
 
 ## Data-handling summary
 
@@ -90,13 +92,12 @@ Keep this summary synchronized with the public privacy policy and the actual imp
 
 ## Reviewer test instructions
 
-1. Open an ordinary webpage with selectable text; browser-owned pages do not allow content scripts.
-2. Select text and confirm the action bubble appears.
-3. Choose Google and confirm a search opens for the selection.
-4. Select text again, choose Copy, and verify the clipboard.
-5. Select text and press Ctrl+Shift+. (Command+Shift+. on macOS); verify focus, arrow keys, Enter, and Escape.
-6. Open the toolbar icon to test Settings and a custom engine.
-No account or credentials are required.
+1. On an ordinary webpage, select text and confirm the bubble appears.
+2. Choose Google and confirm a search opens; test Copy similarly.
+3. Select text in an input and confirm no automatic bubble appears. Press Ctrl+Shift+. (Command+Shift+. on macOS) and confirm it opens.
+4. Select text and press Alt+1; confirm Google opens without the bubble.
+5. Test arrow keys, Enter, Escape, Settings, and a custom engine.
+No account is required. Browser-owned pages do not allow content scripts.
 
 ## Store assets
 

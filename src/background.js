@@ -11,30 +11,68 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
 
   if (reason === "install") {
     const commands = await chrome.commands.getAll();
-    const launcher = commands.find(
-      (command) => command.name === "open-selection-launcher"
+    const expected = new Set(["open-selection-launcher", "search-first-engine"]);
+    const shortcutMissing = commands.some(
+      (command) => expected.has(command.name) && !command.shortcut
     );
-    if (launcher && !launcher.shortcut) {
-      await chrome.storage.local.set({ shortcutMissing: true });
-    }
+    await chrome.storage.local.set({ shortcutMissing });
   }
 });
 
 chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
 
-chrome.commands.onCommand.addListener(async (command, tab) => {
-  if (command !== "open-selection-launcher" || !tab?.id) return;
-
-  const frames = await chrome.webNavigation.getAllFrames({ tabId: tab.id });
-  await Promise.allSettled(
+async function sendToFrames(tabId, message) {
+  let frames;
+  try {
+    frames = await chrome.webNavigation.getAllFrames({ tabId });
+  } catch (_error) {
+    return [];
+  }
+  return Promise.allSettled(
     (frames || []).map((frame) =>
       chrome.tabs.sendMessage(
-        tab.id,
-        { type: "SHOW_SELECTION_LAUNCHER", focus: true },
+        tabId,
+        message,
         { frameId: frame.frameId }
       )
     )
   );
+}
+
+async function openSearch(text, engine, tabId) {
+  const url = buildSearchUrl(text, engine);
+  if (engine.openInNewTab) {
+    await chrome.tabs.create({ url });
+  } else if (tabId) {
+    await chrome.tabs.update(tabId, { url });
+  } else {
+    await chrome.tabs.create({ url });
+  }
+}
+
+chrome.commands.onCommand.addListener(async (command, tab) => {
+  if (!tab?.id) return;
+
+  if (command === "open-selection-launcher") {
+    await sendToFrames(tab.id, { type: "SHOW_SELECTION_LAUNCHER", focus: true });
+    return;
+  }
+
+  if (command !== "search-first-engine") return;
+  const responses = await sendToFrames(tab.id, { type: "GET_SELECTED_TEXT" });
+  const selectedText = responses.find(
+    (result) => result.status === "fulfilled" && result.value?.text?.trim()
+  )?.value.text;
+  if (!selectedText) return;
+
+  const { settings: stored } = await chrome.storage.sync.get("settings");
+  const engine = normalizeSettings(stored).engines.find((candidate) => candidate.enabled);
+  if (!engine) return;
+  try {
+    await openSearch(selectedText, engine, tab.id);
+  } catch (_error) {
+    // Invalid synchronized settings should not create an uncaught command error.
+  }
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -59,14 +97,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       );
       if (!engine) throw new Error("That search engine is not available.");
 
-      const url = buildSearchUrl(String(message.text ?? ""), engine);
-      if (engine.openInNewTab) {
-        await chrome.tabs.create({ url });
-      } else if (_sender.tab?.id) {
-        await chrome.tabs.update(_sender.tab.id, { url });
-      } else {
-        await chrome.tabs.create({ url });
-      }
+      await openSearch(String(message.text ?? ""), engine, _sender.tab?.id);
       sendResponse({ ok: true });
     } catch (error) {
       sendResponse({ ok: false, error: error.message });

@@ -70,6 +70,13 @@
     return element?.closest('dialog[open], [aria-modal="true"], [role="dialog"]') || null;
   }
 
+  function isEditableSelection(node) {
+    const element = node instanceof Element ? node : node?.parentElement;
+    return document.designMode === "on" || Boolean(element?.closest(
+      'input, textarea, [contenteditable=""], [contenteditable="true"], [role="textbox"]'
+    ));
+  }
+
   function mountUi(container) {
     const target = container?.isConnected
       ? container
@@ -87,21 +94,30 @@
     ) {
       const text = active.value.slice(active.selectionStart, active.selectionEnd);
       const rect = active.getBoundingClientRect();
-      return { text, rect, container: interactiveContainer(active) };
+      return { text, rect, container: interactiveContainer(active), editable: true };
     }
 
     const selection = window.getSelection();
     const text = selection?.toString() || "";
-    if (!text || !selection.rangeCount) return { text: "", rect: null, container: null };
+    if (!text || !selection.rangeCount) {
+      return { text: "", rect: null, container: null, editable: false };
+    }
     const range = selection.getRangeAt(0);
     let rect = range.getBoundingClientRect();
     if (!rect.width && !rect.height) {
       rect = range.getClientRects()[0] || rect;
     }
-    return { text, rect, container: interactiveContainer(range.commonAncestorContainer) };
+    return {
+      text,
+      rect,
+      container: interactiveContainer(range.commonAncestorContainer),
+      editable: isEditableSelection(range.commonAncestorContainer)
+    };
   }
 
   function hide({ suppress = false } = {}) {
+    clearTimeout(autoShowTimer);
+    autoShowTimer = null;
     clearTimeout(repositionTimer);
     repositionTimer = null;
     if (!panel || panel.hidden) return;
@@ -328,10 +344,10 @@
     panel.append(status);
   }
 
-  function show({ focus = false } = {}) {
+  function show({ focus = false, allowEditable = false } = {}) {
     if (!document.hasFocus()) return false;
     const details = selectionDetails();
-    if (!details.text.trim()) {
+    if (!details.text.trim() || (details.editable && !allowEditable)) {
       hide();
       return false;
     }
@@ -387,10 +403,17 @@
   }, true);
   window.addEventListener("scroll", () => hide(), true);
   window.addEventListener("resize", () => hide());
+  window.addEventListener("blur", () => hide());
 
-  chrome.runtime.onMessage.addListener((message) => {
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type === "SHOW_SELECTION_LAUNCHER") {
-      show({ focus: message.focus });
+      show({ focus: message.focus, allowEditable: true });
+      return;
+    }
+
+    if (message?.type === "GET_SELECTED_TEXT") {
+      const details = selectionDetails();
+      sendResponse({ text: document.hasFocus() ? details.text : "" });
     }
   });
 

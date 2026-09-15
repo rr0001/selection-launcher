@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "npm run check && npm test && node scripts/build.mjs",
-    "test": "node --test tests/shared.test.js tests/publish.test.mjs",
+    "test": "node --test tests/shared.test.js tests/publish.test.mjs tests/manifest.test.mjs",
     "check": "node --check src/shared.js && node --check src/background.js && node --check src/content.js && node --check src/options.js && node --check scripts/build.mjs && node --check scripts/publish.mjs",
     "release": "node scripts/publish.mjs"
   }

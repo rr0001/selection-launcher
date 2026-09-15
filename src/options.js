@@ -128,15 +128,16 @@
 
   async function updateShortcutStatus() {
     const commands = await chrome.commands.getAll();
-    const command = commands.find(
+    const launcher = commands.find(
       (candidate) => candidate.name === "open-selection-launcher"
     );
+    const quickSearch = commands.find(
+      (candidate) => candidate.name === "search-first-engine"
+    );
     const status = document.querySelector("#shortcut-status");
-    if (command?.shortcut) {
-      status.textContent = `Current shortcut: ${command.shortcut}. Chrome manages changes at chrome://extensions/shortcuts.`;
-    } else {
-      status.textContent = "No shortcut is assigned. Choose Change keyboard shortcut to assign one.";
-    }
+    const launcherText = launcher?.shortcut || "not assigned";
+    const quickSearchText = quickSearch?.shortcut || "not assigned";
+    status.textContent = `Open bubble: ${launcherText}. Search with first enabled engine: ${quickSearchText}. Chrome manages changes at chrome://extensions/shortcuts.`;
   }
 
   function renderRegexRule(container, rule) {

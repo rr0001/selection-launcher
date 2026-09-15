@@ -19,7 +19,7 @@ See [CHANGELOG.md](CHANGELOG.md) for features and fixes included in each release
 1. Open `chrome://extensions` in Chrome, Edge, Brave, or another Chromium browser.
 2. Turn on **Developer mode**.
 3. Choose **Load unpacked** and select this folder.
-4. Select some text on a normal web page. The action bubble appears automatically.
+4. Select some text on a normal web page. Outside editable fields, the action bubble appears automatically.
 5. Press **Ctrl+Shift+.** (or **Command+Shift+.** on macOS) to open and focus the bubble from the keyboard.
 
 Chrome does not allow extensions to run on browser-owned pages such as `chrome://extensions` or the Chrome Web Store.
@@ -27,12 +27,15 @@ Chrome does not allow extensions to run on browser-owned pages such as `chrome:/
 ## Keyboard use
 
 - **Ctrl/Command+Shift+.**: open the selection actions and focus the first button.
+- **Alt+1**: immediately search the selection with the first enabled engine, without opening the bubble.
 - **Arrow keys**: move between actions.
 - **Enter** or **Space**: run the focused action.
 - **Home / End**: jump to the first / last action.
 - **Escape**: dismiss the bubble.
 
 Change the shortcut at `chrome://extensions/shortcuts`. If Chrome reports a collision with another extension or browser command, assign another combination there.
+
+Selections inside text inputs and editable page regions do not open the bubble automatically. Both shortcuts continue to work there when explicitly activated. Clicking anywhere outside an open bubble dismisses it.
 
 ## Search engine configuration
 
