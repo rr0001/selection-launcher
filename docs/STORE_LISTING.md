@@ -27,6 +27,7 @@ Selection Launcher includes:
 - Arrow-key navigation between actions, plus Home, End, Enter, Space, and Escape support.
 - A direct keyboard shortcut for the first enabled search engine.
 - An option to show the bubble automatically after text is selected.
+- Automatic display waits until pointer or Shift-key selection is finished.
 - Automatic suppression in editable fields until a shortcut is used.
 - Browser-synchronized settings when extension sync is available.
 

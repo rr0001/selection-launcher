@@ -36,6 +36,7 @@ Chrome does not allow extensions to run on browser-owned pages such as `chrome:/
 Change the shortcut at `chrome://extensions/shortcuts`. If Chrome reports a collision with another extension or browser command, assign another combination there.
 
 Selections inside text inputs and editable page regions do not open the bubble automatically. Both shortcuts continue to work there when explicitly activated. Clicking anywhere outside an open bubble dismisses it.
+Automatic display waits until you release the mouse button or finish Shift-key selection, then briefly lets the selection settle before opening the bubble.
 
 ## Search engine configuration
 

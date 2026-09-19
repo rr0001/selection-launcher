@@ -14,6 +14,9 @@
   let selectedText = "";
   let autoShowTimer = null;
   let repositionTimer = null;
+  const selectionPointers = new Set();
+  const selectionKeys = new Set();
+  let pointerSelectionChanged = false;
   let suppressUntil = 0;
   let useTopLayerPopover = typeof HTMLElement.prototype.showPopover === "function";
 
@@ -371,16 +374,39 @@
 
   function scheduleAutoShow() {
     clearTimeout(autoShowTimer);
-    if (!settings.autoShow || Date.now() < suppressUntil) return;
-    autoShowTimer = window.setTimeout(() => show(), 180);
+    autoShowTimer = null;
+    if (!settings.autoShow || Date.now() < suppressUntil ||
+        selectionPointers.size || selectionKeys.size) return;
+    autoShowTimer = window.setTimeout(() => {
+      if (!selectionPointers.size && !selectionKeys.size) show();
+    }, 180);
   }
 
-  document.addEventListener("selectionchange", scheduleAutoShow);
+  document.addEventListener("selectionchange", () => {
+    if (selectionPointers.size) pointerSelectionChanged = true;
+    scheduleAutoShow();
+  });
   document.addEventListener("pointerdown", (event) => {
     if (host && event.composedPath().includes(host)) return;
+    if (event.button === 0) {
+      if (!selectionPointers.size) pointerSelectionChanged = false;
+      selectionPointers.add(event.pointerId);
+    }
+    hide();
+  }, true);
+  document.addEventListener("pointerup", (event) => {
+    if (selectionPointers.delete(event.pointerId) && pointerSelectionChanged) scheduleAutoShow();
+  }, true);
+  document.addEventListener("pointercancel", (event) => {
+    selectionPointers.delete(event.pointerId);
     hide();
   }, true);
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Shift" || (event.shiftKey &&
+        ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"].includes(event.key))) {
+      selectionKeys.add(event.code || event.key);
+      clearTimeout(autoShowTimer);
+    }
     if (!panel || panel.hidden) return;
     const buttons = actionButtons();
     const index = buttons.indexOf(shadow.activeElement);
@@ -401,9 +427,16 @@
       buttons.at(-1)?.focus();
     }
   }, true);
+  document.addEventListener("keyup", (event) => {
+    if (selectionKeys.delete(event.code || event.key)) scheduleAutoShow();
+  }, true);
   window.addEventListener("scroll", () => hide(), true);
   window.addEventListener("resize", () => hide());
-  window.addEventListener("blur", () => hide());
+  window.addEventListener("blur", () => {
+    selectionPointers.clear();
+    selectionKeys.clear();
+    hide();
+  });
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type === "SHOW_SELECTION_LAUNCHER") {
