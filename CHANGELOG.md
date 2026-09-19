@@ -6,6 +6,16 @@ The project uses [Semantic Versioning](https://semver.org/) and groups release e
 
 <!-- releases -->
 
+## 0.1.5 - 2026-09-19
+
+### Added
+
+- Add direct search shortcut and editable field behavior (`f2b478a`)
+
+### Fixed
+
+- Wait until text selection finishes before showing bubble (`cacc72d`)
+
 ## 0.1.4 - 2026-09-13
 
 ### Fixed
